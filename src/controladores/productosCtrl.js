@@ -38,7 +38,7 @@ export const createProducto = async (req, res) => {
                 prod_stock,
                 prod_precio,
                 prod_activo,
-                rutaImagen // Pasamos la ruta construida del archivo físico
+                rutaImagen
             ]
         );
 
@@ -65,8 +65,6 @@ export const updateProducto = async (req, res) => {
             prod_activo
         } = req.body;
 
-        // Si suben una nueva imagen en la edición, la procesamos. 
-        // Si no suben nada, mantenemos la que pasen por texto o puedes optimizar la query según necesites.
         let rutaImagen = req.body.prod_imagen; 
         if (req.file) {
             rutaImagen = `/uploads/${req.file.filename}`;
