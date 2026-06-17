@@ -7,7 +7,7 @@ import productosRoutes from './routes/productos.routes.js';
 
 const app = express();
 
-export default app;
+
 
 // =========================
 // 🔐 CONFIGURACIÓN CORS
@@ -48,5 +48,5 @@ app.use((req, res) => {
         message: 'Endpoint no found'
     });
 });
-
+export default app;
 
