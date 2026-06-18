@@ -17,51 +17,23 @@ export const createProducto = async (req, res) => {
             prod_nombre,
             prod_stock,
             prod_precio,
-            prod_activo
+            prod_activo,
+            prod_imagen // <-- Jala el string Base64 directo del body
         } = req.body;
 
-        // CAMBIO AQUÍ: Cloudinary guarda el enlace completo de internet en path
-        let rutaImagen = null;
-        if (req.file) {
-            rutaImagen = req.file.path; 
-        }
-
         const [result] = await conmysql.query(
-            `INSERT INTO productos
-            (prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen)
+            `INSERT INTO productos 
+            (prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen) 
             VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-                prod_codigo,
-                prod_nombre,
-                prod_stock,
-                prod_precio,
-                prod_activo,
-                rutaImagen
-            ]
+            [prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen]
         );
 
-        // RECOMENDACIÓN: Armamos el objeto final para pasárselo a Ionic completo
-        const productoCreado = {
-            prod_id: result.insertId,
-            prod_codigo,
-            prod_nombre,
-            prod_stock: Number(prod_stock),
-            prod_precio: Number(prod_precio),
-            prod_activo: Number(prod_activo),
-            prod_imagen: rutaImagen
-        };
-
-        res.json({
-            message: 'Producto creado correctamente',
-            producto: productoCreado // <-- Así Ionic actualiza la lista sin parpadear
-        });
-
+        res.json({ message: 'Producto creado correctamente', id: result.insertId });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ message: 'Error al insertar producto' });
     }
 };
-
 export const updateProducto = async (req, res) => {
     try {
         const { id } = req.params;
@@ -70,53 +42,20 @@ export const updateProducto = async (req, res) => {
             prod_nombre,
             prod_stock,
             prod_precio,
-            prod_activo
+            prod_activo,
+            prod_imagen // <-- Jala el string Base64 directo del body
         } = req.body;
 
-        // CAMBIO AQUÍ: Si subió foto nueva, se toma req.file.path. Si no, conserva la que vino por body
-        let rutaImagen = req.body.prod_imagen; 
-        if (req.file) {
-            rutaImagen = req.file.path;
-        }
-
         await conmysql.query(
-            `UPDATE productos SET
-            prod_codigo=?,
-            prod_nombre=?,
-            prod_stock=?,
-            prod_precio=?,
-            prod_activo=?,
-            prod_imagen=?
-            WHERE prod_id=?`,
-            [
-                prod_codigo,
-                prod_nombre,
-                prod_stock,
-                prod_precio,
-                prod_activo,
-                rutaImagen,
-                id
-            ]
+            `UPDATE productos SET 
+            prod_codigo = ?, prod_nombre = ?, prod_stock = ?, prod_precio = ?, prod_activo = ?, prod_imagen = ? 
+            WHERE prod_id = ?`,
+            [prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen, id]
         );
 
-        // Armamos el objeto modificado para responderle a Ionic
-        const productoModificado = {
-            prod_id: Number(id),
-            prod_codigo,
-            prod_nombre,
-            prod_stock: Number(prod_stock),
-            prod_precio: Number(prod_precio),
-            prod_activo: Number(prod_activo),
-            prod_imagen: rutaImagen
-        };
-
-        res.json({ 
-            message: 'Producto actualizado correctamente',
-            producto: productoModificado 
-        });
-
+        res.json({ message: 'Producto actualizado correctamente' });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ message: 'Error al actualizar producto' });
     }
 };
