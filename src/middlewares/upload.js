@@ -6,7 +6,7 @@ import { CloudinaryStorage } from 'multer-storage-cloudinary';
 cloudinary.config({
   cloud_name: 'dx0pp2oup',
   api_key: '317684346948143',
-  api_secret: 'TU_API_SECRET_REAL' // <-- Recuerda dar clic en "Reveal" en tu página de Cloudinary y pegarlo aquí
+  api_secret: 'EdgPJktTxbESZ5910HyUM7VXM-Q' // <-- Recuerda dar clic en "Reveal" en tu página de Cloudinary y pegarlo aquí
 });
 
 // 2. Configurar el almacenamiento directo hacia la nube
