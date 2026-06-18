@@ -12,7 +12,6 @@ export const getProductos = async (req, res) => {
 
 export const createProducto = async (req, res) => {
     try {
-        // Extraemos los campos de texto normales desde req.body
         const {
             prod_codigo,
             prod_nombre,
@@ -20,11 +19,11 @@ export const createProducto = async (req, res) => {
             prod_precio,
             prod_activo
         } = req.body;
-        // Validamos si efectivamente viene un archivo en la petición
+
+        // CAMBIO AQUÍ: Cloudinary guarda el enlace completo de internet en path
         let rutaImagen = null;
         if (req.file) {
-            // Guarda el formato exacto que tienes en tu BD: /uploads/nombre-archivo.jpg
-            rutaImagen = `/uploads/${req.file.filename}`;
+            rutaImagen = req.file.path; 
         }
 
         const [result] = await conmysql.query(
@@ -41,10 +40,20 @@ export const createProducto = async (req, res) => {
             ]
         );
 
+        // RECOMENDACIÓN: Armamos el objeto final para pasárselo a Ionic completo
+        const productoCreado = {
+            prod_id: result.insertId,
+            prod_codigo,
+            prod_nombre,
+            prod_stock: Number(prod_stock),
+            prod_precio: Number(prod_precio),
+            prod_activo: Number(prod_activo),
+            prod_imagen: rutaImagen
+        };
+
         res.json({
             message: 'Producto creado correctamente',
-            id: result.insertId,
-            prod_imagen: rutaImagen
+            producto: productoCreado // <-- Así Ionic actualiza la lista sin parpadear
         });
 
     } catch (error) {
@@ -64,9 +73,10 @@ export const updateProducto = async (req, res) => {
             prod_activo
         } = req.body;
 
+        // CAMBIO AQUÍ: Si subió foto nueva, se toma req.file.path. Si no, conserva la que vino por body
         let rutaImagen = req.body.prod_imagen; 
         if (req.file) {
-            rutaImagen = `/uploads/${req.file.filename}`;
+            rutaImagen = req.file.path;
         }
 
         await conmysql.query(
@@ -89,7 +99,21 @@ export const updateProducto = async (req, res) => {
             ]
         );
 
-        res.json({ message: 'Producto actualizado correctamente' });
+        // Armamos el objeto modificado para responderle a Ionic
+        const productoModificado = {
+            prod_id: Number(id),
+            prod_codigo,
+            prod_nombre,
+            prod_stock: Number(prod_stock),
+            prod_precio: Number(prod_precio),
+            prod_activo: Number(prod_activo),
+            prod_imagen: rutaImagen
+        };
+
+        res.json({ 
+            message: 'Producto actualizado correctamente',
+            producto: productoModificado 
+        });
 
     } catch (error) {
         console.log(error);
