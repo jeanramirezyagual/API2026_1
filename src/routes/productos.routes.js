@@ -9,8 +9,17 @@ import {
 
 const router = Router();
 
-router.post('/productos', createProducto);
-router.put('/productos/:id', updateProducto);
+router.post(
+    '/productos',
+    upload.single('imagen'),
+    createProducto
+);
+
+router.put(
+    '/productos/:id',
+    upload.single('imagen'),
+    updateProducto
+);
 router.get('/productos', getProductos);
 router.delete('/productos/:id', deleteProducto);
 
