@@ -25,6 +25,14 @@ export const createProducto = async (req, res) => {
             prod_imagen
         } = req.body;
 
+        // Validar campos requeridos
+        if (!prod_codigo || !prod_nombre || prod_stock === undefined || !prod_precio) {
+            return res.status(400).json({
+                message: 'Faltan campos requeridos',
+                required: ['prod_codigo', 'prod_nombre', 'prod_stock', 'prod_precio']
+            });
+        }
+
         const [result] = await conmysql.query(
             `INSERT INTO productos
             (prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen)
@@ -34,8 +42,8 @@ export const createProducto = async (req, res) => {
                 prod_nombre,
                 prod_stock,
                 prod_precio,
-                prod_activo,
-                prod_imagen
+                prod_activo || 1,
+                prod_imagen || null
             ]
         );
 
@@ -66,15 +74,22 @@ export const updateProducto = async (req, res) => {
             prod_imagen
         } = req.body;
 
+        // Verificar que el producto existe
         const [producto] = await conmysql.query(
             'SELECT prod_imagen FROM productos WHERE prod_id = ?',
             [id]
         );
 
-        const imagenFinal =
-            prod_imagen || producto[0]?.prod_imagen;
+        if (producto.length === 0) {
+            return res.status(404).json({
+                message: 'Producto no encontrado'
+            });
+        }
 
-        await conmysql.query(
+        const imagenFinal =
+            prod_imagen || producto[0].prod_imagen;
+
+        const [result] = await conmysql.query(
             `UPDATE productos SET
             prod_codigo=?,
             prod_nombre=?,
@@ -93,6 +108,12 @@ export const updateProducto = async (req, res) => {
                 id
             ]
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({
+                message: 'No se pudo actualizar el producto'
+            });
+        }
 
         res.json({
             message: 'Producto actualizado correctamente'

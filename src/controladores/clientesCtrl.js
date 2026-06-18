@@ -31,9 +31,17 @@ export const postInsertarCliente= async (req,res)=>{
     try {
         const {cli_identificacion, cli_nombre, cli_telefono, cli_correo, cli_direccion, cli_pais, cli_ciudad}=req.body
         
+        // Validar campos requeridos
+        if (!cli_identificacion || !cli_nombre || !cli_telefono || !cli_correo) {
+            return res.status(400).json({
+                message: 'Faltan campos requeridos',
+                required: ['cli_identificacion', 'cli_nombre', 'cli_telefono', 'cli_correo']
+            });
+        }
+        
         const[result]=await conmysql.query(
             'insert into clientes(cli_identificacion, cli_nombre, cli_telefono, cli_correo, cli_direccion, cli_pais, cli_ciudad) values(?,?,?,?,?,?,?)',
-            [cli_identificacion, cli_nombre, cli_telefono, cli_correo, cli_direccion, cli_pais, cli_ciudad]
+            [cli_identificacion, cli_nombre, cli_telefono, cli_correo, cli_direccion || null, cli_pais || null, cli_ciudad || null]
         )
         res.send({cli_id:result.insertId})
 
@@ -78,6 +86,18 @@ export const putCliente = async (req, res) => {
             cli_ciudad
         } = req.body;
 
+        // Verificar que el cliente existe
+        const [clienteExiste] = await conmysql.query(
+            'SELECT cli_id FROM clientes WHERE cli_id = ?',
+            [id]
+        );
+
+        if (clienteExiste.length === 0) {
+            return res.status(404).json({
+                message: 'Cliente no encontrado'
+            });
+        }
+
         const [result] = await conmysql.query(
             `UPDATE clientes
              SET cli_identificacion=?,
@@ -99,6 +119,12 @@ export const putCliente = async (req, res) => {
                 id
             ]
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({
+                message: 'No se pudo actualizar el cliente'
+            });
+        }
 
         res.json({
             message: 'Cliente actualizado correctamente'
