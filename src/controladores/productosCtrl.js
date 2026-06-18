@@ -20,7 +20,6 @@ export const createProducto = async (req, res) => {
             prod_precio,
             prod_activo
         } = req.body;
-
         // Validamos si efectivamente viene un archivo en la petición
         let rutaImagen = null;
         if (req.file) {
