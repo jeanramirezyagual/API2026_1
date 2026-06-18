@@ -12,26 +12,45 @@ export const getProductos = async (req, res) => {
 
 export const createProducto = async (req, res) => {
     try {
+
+        console.log("BODY RECIBIDO:");
+        console.log(req.body);
+
         const {
             prod_codigo,
             prod_nombre,
             prod_stock,
             prod_precio,
             prod_activo,
-            prod_imagen // <-- Jala el string Base64 directo del body
+            prod_imagen
         } = req.body;
 
         const [result] = await conmysql.query(
-            `INSERT INTO productos 
-            (prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen) 
+            `INSERT INTO productos
+            (prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen)
             VALUES (?, ?, ?, ?, ?, ?)`,
-            [prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen]
+            [
+                prod_codigo,
+                prod_nombre,
+                prod_stock,
+                prod_precio,
+                prod_activo,
+                prod_imagen
+            ]
         );
 
-        res.json({ message: 'Producto creado correctamente', id: result.insertId });
+        res.json({
+            message: 'Producto creado correctamente',
+            id: result.insertId
+        });
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Error al insertar producto' });
+
+        res.status(500).json({
+            message: 'Error al insertar producto',
+            error: error.message
+        });
     }
 };
 export const updateProducto = async (req, res) => {
