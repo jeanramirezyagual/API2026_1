@@ -16,9 +16,9 @@ router.post(
 );
 
 router.put(
-    '/productos/:id',
-    upload.single('imagen'),
-    updateProducto
+  '/productos/:id',
+  upload.single('imagen'),
+  updateProducto
 );
 router.get('/productos', getProductos);
 router.delete('/productos/:id', deleteProducto);
