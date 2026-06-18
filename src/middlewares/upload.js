@@ -30,5 +30,39 @@ const fileFilter = (req, file, cb) => {
 // 4. Exportamos el middleware 'upload' con la nueva configuración
 export const upload = multer({ 
     storage: storage,
-    fileFilter: fileFilter
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB máximo
+    }
 });
+
+// Middleware flexible que acepta múltiples nombres de campos posibles
+export const uploadImagenFlexible = (req, res, next) => {
+    // Intentar primero con .fields() que acepta múltiples nombres
+    const uploadMultiple = upload.fields([
+        { name: 'imagen', maxCount: 1 },
+        { name: 'image', maxCount: 1 },
+        { name: 'file', maxCount: 1 },
+        { name: 'foto', maxCount: 1 },
+        { name: 'upload', maxCount: 1 }
+    ]);
+    
+    uploadMultiple(req, res, (err) => {
+        if (err) {
+            return next(err);
+        }
+        
+        // Normalizar: si el archivo viene en un campo diferente, ponerlo en req.file
+        if (!req.file && req.files) {
+            const campos = ['imagen', 'image', 'file', 'foto', 'upload'];
+            for (const campo of campos) {
+                if (req.files[campo] && req.files[campo][0]) {
+                    req.file = req.files[campo][0];
+                    break;
+                }
+            }
+        }
+        
+        next();
+    });
+};

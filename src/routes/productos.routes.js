@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { upload } from '../middlewares/upload.js';
+import { upload, uploadImagenFlexible } from '../middlewares/upload.js';
 import {
     getProductos,
     createProducto,
@@ -11,13 +11,13 @@ const router = Router();
 
 router.post(
     '/productos',
-    upload.single('imagen'),
+    uploadImagenFlexible,
     createProducto
 );
 
 router.put(
   '/productos/:id',
-  upload.single('imagen'),
+  uploadImagenFlexible,
   updateProducto
 );
 router.get('/productos', getProductos);
