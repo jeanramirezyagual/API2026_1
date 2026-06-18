@@ -56,26 +56,55 @@ export const createProducto = async (req, res) => {
 export const updateProducto = async (req, res) => {
     try {
         const { id } = req.params;
+
         const {
             prod_codigo,
             prod_nombre,
             prod_stock,
             prod_precio,
             prod_activo,
-            prod_imagen // <-- Jala el string Base64 directo del body
+            prod_imagen
         } = req.body;
 
-        await conmysql.query(
-            `UPDATE productos SET 
-            prod_codigo = ?, prod_nombre = ?, prod_stock = ?, prod_precio = ?, prod_activo = ?, prod_imagen = ? 
-            WHERE prod_id = ?`,
-            [prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen, id]
+        const [producto] = await conmysql.query(
+            'SELECT prod_imagen FROM productos WHERE prod_id = ?',
+            [id]
         );
 
-        res.json({ message: 'Producto actualizado correctamente' });
+        const imagenFinal =
+            prod_imagen || producto[0]?.prod_imagen;
+
+        await conmysql.query(
+            `UPDATE productos SET
+            prod_codigo=?,
+            prod_nombre=?,
+            prod_stock=?,
+            prod_precio=?,
+            prod_activo=?,
+            prod_imagen=?
+            WHERE prod_id=?`,
+            [
+                prod_codigo,
+                prod_nombre,
+                prod_stock,
+                prod_precio,
+                prod_activo,
+                imagenFinal,
+                id
+            ]
+        );
+
+        res.json({
+            message: 'Producto actualizado correctamente'
+        });
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Error al actualizar producto' });
+
+        res.status(500).json({
+            message: 'Error al actualizar producto',
+            error: error.message
+        });
     }
 };
 
