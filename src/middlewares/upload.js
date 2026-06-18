@@ -40,6 +40,7 @@ export const upload = multer({
 export const uploadImagenFlexible = (req, res, next) => {
     // Intentar primero con .fields() que acepta múltiples nombres
     const uploadMultiple = upload.fields([
+        { name: 'prod_imagen', maxCount: 1 },
         { name: 'imagen', maxCount: 1 },
         { name: 'image', maxCount: 1 },
         { name: 'file', maxCount: 1 },
