@@ -18,7 +18,8 @@ export const createProducto = async (req, res) => {
             prod_nombre,
             prod_stock,
             prod_precio,
-            prod_activo
+            prod_activo,
+            prod_imagen
         } = req.body;
 
         // Validamos si efectivamente viene un archivo en la petición

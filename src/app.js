@@ -7,7 +7,8 @@ import productosRoutes from './routes/productos.routes.js';
 
 const app = express();
 
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // =========================
 // 🔐 CONFIGURACIÓN CORS
@@ -30,8 +31,7 @@ app.use(express.json());
 // =========================
 // 🖼️ ARCHIVOS ESTÁTICOS
 // =========================
-app.use('/uploads', express.static(path.resolve('src/uploads')));
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // =========================
 // 🌐 RUTAS API
