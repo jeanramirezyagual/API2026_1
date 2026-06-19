@@ -12,17 +12,15 @@ export const getProductos = async (req, res) => {
 
 export const createProducto = async (req, res) => {
     try {
-
-        console.log("BODY RECIBIDO:");
-        console.log(req.body);
+        console.log("BODY RECIBIDO:", req.body);
+        console.log("FILES RECIBIDOS:", req.files); // Para monitoreo en consola
 
         const {
             prod_codigo,
             prod_nombre,
             prod_stock,
             prod_precio,
-            prod_activo,
-            prod_imagen
+            prod_activo
         } = req.body;
 
         // Validar campos requeridos
@@ -31,6 +29,13 @@ export const createProducto = async (req, res) => {
                 message: 'Faltan campos requeridos',
                 required: ['prod_codigo', 'prod_nombre', 'prod_stock', 'prod_precio']
             });
+        }
+
+        // --- CORRECCIÓN: Capturar la URL de Cloudinary desde req.files ---
+        let urlImagen = null;
+        if (req.files && req.files['prod_imagen'] && req.files['prod_imagen'][0]) {
+            // Cloudinary con Multer suele inyectar la URL final en .path o .secure_url
+            urlImagen = req.files['prod_imagen'][0].path || req.files['prod_imagen'][0].secure_url;
         }
 
         const [result] = await conmysql.query(
@@ -43,24 +48,33 @@ export const createProducto = async (req, res) => {
                 prod_stock,
                 prod_precio,
                 prod_activo || 1,
-                prod_imagen || null
+                urlImagen // Guardamos la URL de Cloudinary
             ]
         );
 
+        // --- CORRECCIÓN FRONTEND: Estructurar la respuesta como espera Ionic ---
         res.json({
             message: 'Producto creado correctamente',
-            id: result.insertId
+            producto: {
+                prod_id: result.insertId,
+                prod_codigo,
+                prod_nombre,
+                prod_stock,
+                prod_precio,
+                prod_activo: prod_activo || 1,
+                prod_imagen: urlImagen
+            }
         });
 
     } catch (error) {
         console.error(error);
-
         res.status(500).json({
             message: 'Error al insertar producto',
             error: error.message
         });
     }
 };
+
 export const updateProducto = async (req, res) => {
     try {
         const { id } = req.params;
@@ -70,8 +84,7 @@ export const updateProducto = async (req, res) => {
             prod_nombre,
             prod_stock,
             prod_precio,
-            prod_activo,
-            prod_imagen
+            prod_activo
         } = req.body;
 
         // Verificar que el producto existe
@@ -86,8 +99,12 @@ export const updateProducto = async (req, res) => {
             });
         }
 
-        const imagenFinal =
-            prod_imagen || producto[0].prod_imagen;
+        // --- CORRECCIÓN: Verificar si se subió una nueva imagen a Cloudinary ---
+        let imagenFinal = producto[0].prod_imagen; // Dejar la anterior por defecto
+        
+        if (req.files && req.files['prod_imagen'] && req.files['prod_imagen'][0]) {
+            imagenFinal = req.files['prod_imagen'][0].path || req.files['prod_imagen'][0].secure_url;
+        }
 
         const [result] = await conmysql.query(
             `UPDATE productos SET
@@ -115,13 +132,22 @@ export const updateProducto = async (req, res) => {
             });
         }
 
+        // --- CORRECCIÓN FRONTEND: Estructurar la respuesta como espera Ionic ---
         res.json({
-            message: 'Producto actualizado correctamente'
+            message: 'Producto actualizado correctamente',
+            producto: {
+                prod_id: Number(id),
+                prod_codigo,
+                prod_nombre,
+                prod_stock,
+                prod_precio,
+                prod_activo,
+                prod_imagen: imagenFinal
+            }
         });
 
     } catch (error) {
         console.error(error);
-
         res.status(500).json({
             message: 'Error al actualizar producto',
             error: error.message
