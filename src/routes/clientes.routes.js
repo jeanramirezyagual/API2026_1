@@ -10,11 +10,11 @@ const router = Router();
 router.post('/login', login);
 router.post('/usuarios', crearUsuario);
 // 2. Rutas protegidas (si no envían token válido, Express las rebota antes de llegar al controlador)
-router.get('/clientes', verificarToken, getClientes);
-router.get('/clientes/:id', verificarToken, getClientesxid);
-router.post('/clientes', postInsertarCliente);
-router.put('/clientes/:id', putCliente);
-router.patch('/clientes/:id', pathCliente);
-router.delete('/clientes/:id', deleteCliente);
+router.get('/', verificarToken, getClientes);
+router.get('/:id', verificarToken, getClientesxid);
+router.post('/', postInsertarCliente);
+router.put('/:id', putCliente);
+router.patch('/:id', pathCliente);
+router.delete('/:id', deleteCliente);
 
 export default router;

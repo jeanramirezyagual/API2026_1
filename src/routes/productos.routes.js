@@ -10,17 +10,17 @@ import {
 const router = Router();
 
 router.post(
-    '/productos',
+    '/',
     uploadImagenFlexible,
     createProducto
 );
 
 router.put(
-  '/productos/:id',
+  '/:id',
   uploadImagenFlexible,
   updateProducto
 );
-router.get('/productos', getProductos);
-router.delete('/productos/:id', deleteProducto);
+router.get('/', getProductos);
+router.delete('/:id', deleteProducto);
 
 export default router;
