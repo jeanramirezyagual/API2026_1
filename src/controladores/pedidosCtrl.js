@@ -10,7 +10,7 @@ export const crearPedido = async (req, res) => {
         });
     }
 
-    const detallesValidos = detalles.every((detalle) =>
+    const detalhesValidos = detalles.every((detalle) =>
         detalle && detalle.prod_id && detalle.det_cantidad != null && detalle.det_precio != null
     );
 
@@ -18,6 +18,28 @@ export const crearPedido = async (req, res) => {
         return res.status(400).json({
             ok: false,
             message: 'Cada detalle debe contener prod_id, det_cantidad y det_precio',
+        });
+    }
+
+    const statusMap = {
+        Pendiente: 1,
+        pendiente: 1,
+        EnProceso: 2,
+        enproceso: 2,
+        Enviado: 3,
+        enviado: 3,
+        Cancelado: 4,
+        cancelado: 4,
+    };
+
+    const pedEstado = typeof ped_estado === 'string'
+        ? statusMap[ped_estado] ?? Number(ped_estado)
+        : Number(ped_estado);
+
+    if (!Number.isInteger(pedEstado) || pedEstado <= 0) {
+        return res.status(400).json({
+            ok: false,
+            message: 'ped_estado debe ser un entero válido o un string mapeado (por ejemplo Pendiente)',
         });
     }
 
@@ -32,7 +54,7 @@ export const crearPedido = async (req, res) => {
             Number(cli_id),
             Number(usr_id),
             ped_fecha,
-            ped_estado,
+            pedEstado,
         ]);
 
         const ped_id = resultadoPedido.insertId;
