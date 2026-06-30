@@ -10,7 +10,7 @@ export const crearPedido = async (req, res) => {
         });
     }
 
-    const detalhesValidos = detalles.every((detalle) =>
+    const detallesValidos = detalles.every((detalle) =>
         detalle && detalle.prod_id && detalle.det_cantidad != null && detalle.det_precio != null
     );
 
