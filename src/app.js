@@ -1,19 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
-// 📌 RUTAS
 import clientesRoutes from './routes/clientes.routes.js';
 import productosRoutes from './routes/productos.routes.js';
+import pedidosRouter from './routes/pedidos.routes.js';
 
 const app = express();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// =========================
-// 🔐 CONFIGURACIÓN CORS
-// =========================
 const corsOptions = {
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -21,33 +14,21 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-
-// =========================
-// 📦 MIDDLEWARE
-// =========================
 app.use(express.json());
 
+// Servir archivos estáticos para subidas
+app.use('/uploads', express.static(path.resolve('src/uploads')));
 
-// =========================
-// 🖼️ ARCHIVOS ESTÁTICOS
-// =========================
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Enrutamiento principal de la API
+app.use('/api/clientes', clientesRoutes);
+app.use('/api/productos', productosRoutes);
+app.use('/api/pedidos', pedidosRouter);
 
-// =========================
-// 🌐 RUTAS API
-// =========================
-app.use('/api', clientesRoutes);
-app.use('/api', productosRoutes);
-
-
-// =========================
-// ❌ ENDPOINT NO ENCONTRADO
-// =========================
+// Manejo de rutas no encontradas (404)
 app.use((req, res) => {
     res.status(404).json({
-        message: 'Endpoint no found'
+        message: 'Endpoint not found'
     });
 });
-export default app;
 
+export default app;
