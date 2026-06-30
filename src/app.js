@@ -4,6 +4,7 @@ import path from 'path';
 import clientesRoutes from './routes/clientes.routes.js';
 import productosRoutes from './routes/productos.routes.js';
 import pedidosRouter from './routes/pedidos.routes.js';
+import { login } from './controladores/authCtrl.js';
 
 const app = express();
 
@@ -23,6 +24,9 @@ app.use('/uploads', express.static(path.resolve('src/uploads')));
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/pedidos', pedidosRouter);
+
+// Exponer endpoint directo de login para compatibilidad con frontend
+app.post('/api/login', login);
 
 // Manejo de rutas no encontradas (404)
 app.use((req, res) => {
