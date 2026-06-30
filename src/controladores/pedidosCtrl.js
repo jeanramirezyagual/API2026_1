@@ -1,5 +1,34 @@
 import { conmysql } from '../db.js';
 
+export const getPedidos = async (req, res) => {
+    try {
+        const [pedidos] = await conmysql.query('SELECT * FROM pedidos');
+        return res.json({ ok: true, pedidos });
+    } catch (error) {
+        console.error('Error al consultar pedidos:', error);
+        return res.status(500).json({ ok: false, mensaje: 'Error al consultar pedidos' });
+    }
+};
+
+export const getPedidoById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const [pedidoResult] = await conmysql.query('SELECT * FROM pedidos WHERE ped_id = ?', [id]);
+
+        if (pedidoResult.length === 0) {
+            return res.status(404).json({ ok: false, mensaje: 'Pedido no encontrado' });
+        }
+
+        const [detalle] = await conmysql.query('SELECT * FROM pedidos_detalle WHERE ped_id = ?', [id]);
+
+        return res.json({ ok: true, pedido: pedidoResult[0], detalle });
+    } catch (error) {
+        console.error('Error al consultar pedido por id:', error);
+        return res.status(500).json({ ok: false, mensaje: 'Error al consultar el pedido' });
+    }
+};
+
 export const guardarPedido = async (req, res) => {
     const conexion = await conmysql.getConnection();
 
