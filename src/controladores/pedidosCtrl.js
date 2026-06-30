@@ -2,8 +2,36 @@ import { conmysql } from '../db.js';
 
 export const getPedidos = async (req, res) => {
     try {
-        const [pedidos] = await conmysql.query('SELECT * FROM pedidos');
-        return res.json({ ok: true, pedidos });
+        const [pedidos] = await conmysql.query(
+            `SELECT p.*, c.cli_nombre, c.cli_identificacion, c.cli_telefono, c.cli_correo
+             FROM pedidos p
+             LEFT JOIN clientes c ON p.cli_id = c.cli_id`
+        );
+
+        const [detalles] = await conmysql.query(
+            `SELECT d.*, pr.prod_nombre, pr.prod_codigo, pr.prod_precio AS prod_precio_base
+             FROM pedidos_detalle d
+             LEFT JOIN productos pr ON d.prod_id = pr.prod_id`
+        );
+
+        const detallesPorPedido = detalles.reduce((acc, detalle) => {
+            if (!acc[detalle.ped_id]) acc[detalle.ped_id] = [];
+            acc[detalle.ped_id].push(detalle);
+            return acc;
+        }, {});
+
+        const pedidosConDetalles = pedidos.map((pedido) => ({
+            ...pedido,
+            cliente: {
+                cli_nombre: pedido.cli_nombre,
+                cli_identificacion: pedido.cli_identificacion,
+                cli_telefono: pedido.cli_telefono,
+                cli_correo: pedido.cli_correo,
+            },
+            detalle: detallesPorPedido[pedido.ped_id] || []
+        }));
+
+        return res.json({ ok: true, pedidos: pedidosConDetalles });
     } catch (error) {
         console.error('Error al consultar pedidos:', error);
         return res.status(500).json({ ok: false, mensaje: 'Error al consultar pedidos' });
@@ -14,15 +42,38 @@ export const getPedidoById = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [pedidoResult] = await conmysql.query('SELECT * FROM pedidos WHERE ped_id = ?', [id]);
+        const [pedidoResult] = await conmysql.query(
+            `SELECT p.*, c.cli_nombre, c.cli_identificacion, c.cli_telefono, c.cli_correo
+             FROM pedidos p
+             LEFT JOIN clientes c ON p.cli_id = c.cli_id
+             WHERE p.ped_id = ?`,
+            [id]
+        );
 
         if (pedidoResult.length === 0) {
             return res.status(404).json({ ok: false, mensaje: 'Pedido no encontrado' });
         }
 
-        const [detalle] = await conmysql.query('SELECT * FROM pedidos_detalle WHERE ped_id = ?', [id]);
+        const [detalle] = await conmysql.query(
+            `SELECT d.*, pr.prod_nombre, pr.prod_codigo, pr.prod_precio AS prod_precio_base
+             FROM pedidos_detalle d
+             LEFT JOIN productos pr ON d.prod_id = pr.prod_id
+             WHERE d.ped_id = ?`,
+            [id]
+        );
 
-        return res.json({ ok: true, pedido: pedidoResult[0], detalle });
+        const pedido = {
+            ...pedidoResult[0],
+            cliente: {
+                cli_nombre: pedidoResult[0].cli_nombre,
+                cli_identificacion: pedidoResult[0].cli_identificacion,
+                cli_telefono: pedidoResult[0].cli_telefono,
+                cli_correo: pedidoResult[0].cli_correo,
+            },
+            detalle
+        };
+
+        return res.json({ ok: true, pedido });
     } catch (error) {
         console.error('Error al consultar pedido por id:', error);
         return res.status(500).json({ ok: false, mensaje: 'Error al consultar el pedido' });
