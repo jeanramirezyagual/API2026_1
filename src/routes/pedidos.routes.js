@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { crearPedido } from '../controladores/pedidosCtrl.js';
+import { guardarPedido } from '../controladores/pedidosCtrl.js';
 
 const router = Router();
 
-router.post('/', crearPedido);
+router.post('/', guardarPedido);
 
 export default router;
