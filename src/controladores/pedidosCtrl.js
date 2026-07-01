@@ -8,8 +8,9 @@ export const getPedidos = async (req, res) => {
              LEFT JOIN clientes c ON p.cli_id = c.cli_id`
         );
 
+        // SE AGREGÓ: pr.prod_imagen AQUÍ
         const [detalles] = await conmysql.query(
-            `SELECT d.*, pr.prod_nombre, pr.prod_codigo, pr.prod_precio AS prod_precio_base
+            `SELECT d.*, pr.prod_nombre, pr.prod_codigo, pr.prod_imagen, pr.prod_precio AS prod_precio_base
              FROM pedidos_detalle d
              LEFT JOIN productos pr ON d.prod_id = pr.prod_id`
         );
@@ -54,8 +55,9 @@ export const getPedidoById = async (req, res) => {
             return res.status(404).json({ ok: false, mensaje: 'Pedido no encontrado' });
         }
 
+        // SE AGREGÓ: pr.prod_imagen TAMBIÉN AQUÍ
         const [detalle] = await conmysql.query(
-            `SELECT d.*, pr.prod_nombre, pr.prod_codigo, pr.prod_precio AS prod_precio_base
+            `SELECT d.*, pr.prod_nombre, pr.prod_codigo, pr.prod_imagen, pr.prod_precio AS prod_precio_base
              FROM pedidos_detalle d
              LEFT JOIN productos pr ON d.prod_id = pr.prod_id
              WHERE d.ped_id = ?`,
@@ -99,14 +101,13 @@ export const guardarPedido = async (req, res) => {
             ped_estado,
             detalle
         } = req.body;
-        // Validaciones
+
         if (!detalle || detalle.length === 0) {
             throw new Error("El pedido no tiene productos.");
         }
         let idCliente = Number(cli_id);
-        // Cliente nuevo
-        if (idCliente === 0) {
 
+        if (idCliente === 0) {
             const [cliente] = await conexion.query(
                 `INSERT INTO clientes
                 (
@@ -132,7 +133,7 @@ export const guardarPedido = async (req, res) => {
 
             idCliente = cliente.insertId;
         }
-        // Pedido
+
         const [pedido] = await conexion.query(
             `INSERT INTO pedidos
             (
@@ -141,7 +142,7 @@ export const guardarPedido = async (req, res) => {
                 usr_id,
                 ped_estado
             )
-            VALUES (?,?,?,?)`,
+            VALUES (?, ?, ?, ?)`,
             [
                 idCliente,
                 ped_fecha,
@@ -150,7 +151,7 @@ export const guardarPedido = async (req, res) => {
             ]
         );
         const ped_id = pedido.insertId;
-        // Detalle
+
         for (const item of detalle) {
             if (Number(item.det_cantidad) <= 0) {
                 throw new Error(`Cantidad inválida del producto ${item.prod_id}`);
@@ -158,7 +159,7 @@ export const guardarPedido = async (req, res) => {
             if (Number(item.det_precio) <= 0) {
                 throw new Error(`Precio inválido del producto ${item.prod_id}`);
             }
-            // Verificar existencia del producto
+
             const [producto] = await conexion.query(
                 "SELECT prod_id FROM productos WHERE prod_id=?",
                 [item.prod_id]
@@ -166,6 +167,7 @@ export const guardarPedido = async (req, res) => {
             if (producto.length === 0) {
                 throw new Error(`El producto ${item.prod_id} no existe.`);
             }
+
             await conexion.query(
                 `INSERT INTO pedidos_detalle
                 (
@@ -202,6 +204,4 @@ export const guardarPedido = async (req, res) => {
     } finally {
         conexion.release();
     }
-
 };
- 
