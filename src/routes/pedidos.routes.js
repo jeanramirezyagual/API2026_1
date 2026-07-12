@@ -5,6 +5,8 @@ const router = Router();
 
 router.post('/', guardarPedido);
 router.get('/', getPedidos);
+router.get('/:id/pdf', getPedidoPdf);
 router.get('/:id', getPedidoById);
-router.get('/api/pedidos/:id/pdf', getPedidoPdf);
+// Dentro de pedidos.routes.js
+
 export default router;
