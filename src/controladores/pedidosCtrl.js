@@ -1,6 +1,7 @@
 import { conmysql } from '../db.js';
 import PDFDocument from 'pdfkit';
 import { messaging } from '../firebase.js';
+
 export const getPedidos = async (req, res) => {
     try {
         const [pedidos] = await conmysql.query(
@@ -138,15 +139,38 @@ export const guardarPedido = async (req, res) => {
         await conexion.commit();
 
         // ==========================================================
-        // 🚀 PREPARADO PARA NOTIFICACIONES PUSH (INVESTIGACIÓN)
+        // 🚀 ENVIAR NOTIFICACIÓN PUSH REAL AL ADMINISTRADOR
         // ==========================================================
-        // En cuanto el commit es exitoso, disparamos la alerta de fondo.
-        // Aquí llamarás a Firebase Cloud Messaging enviando el aviso al admin.
         try {
-            console.log(`[Push Notification] Disparando alerta de nuevo pedido #${ped_id} para el Administrador.`);
-            // enviarNotificacionPushAlAdmin(ped_id, cli_nombre);
+            const tokenAdmin = process.env.TOKEN_ADMIN_REDMI;
+
+            if (tokenAdmin && messaging) {
+                console.log(`[Push Notification] Disparando alerta de nuevo pedido #${ped_id} para el Administrador.`);
+                
+                const mensajePush = {
+                    notification: {
+                        title: '¡Nueva Venta Registrada! 💰',
+                        body: `El cliente ${cli_nombre || 'General'} ha creado el pedido #${ped_id}.`
+                    },
+                    android: {
+                        notification: {
+                            sound: 'default',
+                            status_icon: 'stock_ticker_update',
+                            color: '#7e57c2'
+                        }
+                    },
+                    token: tokenAdmin
+                };
+
+                // Envío asíncrono en segundo plano
+                messaging.send(mensajePush)
+                    .then((resp) => console.log('✅ Push enviado con éxito tras compra:', resp))
+                    .catch((err) => console.error('❌ Error al despachar Push en compra:', err.message));
+            } else {
+                console.log('[Push Notification] Envío omitido: TOKEN_ADMIN_REDMI no configurado en .env o Firebase no listo.');
+            }
         } catch (pushErr) {
-            console.error("Error al enviar la notificación push, pero el pedido se guardó:", pushErr);
+            console.error("Error al estructurar la notificación push, pero el pedido se guardó:", pushErr.message);
         }
         // ==========================================================
 
