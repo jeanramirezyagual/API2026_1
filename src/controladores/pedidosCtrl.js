@@ -1,5 +1,6 @@
 import { conmysql } from '../db.js';
 import PDFDocument from 'pdfkit';
+import { messaging } from '../firebase.js';
 export const getPedidos = async (req, res) => {
     try {
         const [pedidos] = await conmysql.query(
@@ -260,5 +261,35 @@ export const getPedidoPdf = async (req, res) => {
             res.setHeader('Content-Type', 'application/json');
             return res.status(500).json({ ok: false, mensaje: 'Error interno al generar el PDF' });
         }
+    }
+};
+export const testPushNotification = async (req, res) => {
+    const { tokenAdmin } = req.body; 
+
+    if (!tokenAdmin) {
+        return res.status(400).json({ ok: false, mensaje: 'Falta el token del dispositivo' });
+    }
+
+    const mensaje = {
+        notification: {
+            title: '¡Venta Registrada! 💰',
+            body: 'El pedido #1044 ha sido guardado con éxito por el cliente.'
+        },
+        android: {
+            notification: {
+                sound: 'default',
+                status_icon: 'stock_ticker_update',
+                color: '#7e57c2'
+            }
+        },
+        token: tokenAdmin // Dirección de tu Redmi 15C
+    };
+
+    try {
+        const response = await messaging.send(mensaje);
+        res.json({ ok: true, mensaje: 'Notificación enviada con éxito', response });
+    } catch (error) {
+        console.error('Error al enviar push:', error);
+        res.status(500).json({ ok: false, error: error.message });
     }
 };
