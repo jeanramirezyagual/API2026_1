@@ -166,7 +166,6 @@ export const guardarPedido = async (req, res) => {
 };
 export const getPedidoPdf = async (req, res) => {
     const { id } = req.params;
-    // CAPTURAMOS EL TOKEN DESDE LA URL (Query) que envía tu Ionic
     const tokenAsociado = req.query.token;
 
     if (!tokenAsociado) {
@@ -174,9 +173,6 @@ export const getPedidoPdf = async (req, res) => {
     }
 
     try {
-        // NOTA: Si usas JWT, aquí deberías meter tu línea de verificación:
-        // jwt.verify(tokenAsociado, process.env.JWT_SECRET);
-
         const [pedidoResult] = await conmysql.query(
             `SELECT p.*, c.cli_nombre, c.cli_identificacion, c.cli_telefono, c.cli_correo
              FROM pedidos p
@@ -199,11 +195,26 @@ export const getPedidoPdf = async (req, res) => {
 
         const pedido = pedidoResult[0];
 
-        // Configurar las cabeceras HTTP correctamente
+        // 🛡️ SOLUCIÓN AL PRIMER ERROR: Validamos de forma segura el estado del pedido
+        // Si es un número, lo vuelve String. Si es null/undefined, pone 'PENDIENTE'
+        const estadoTexto = pedido.ped_estado !== null && pedido.ped_estado !== undefined 
+            ? String(pedido.ped_estado).toUpperCase() 
+            : 'PENDIENTE';
+
+        // Configurar las cabeceras HTTP ANTES de inicializar PDFKit
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Pedido_${id}.pdf`);
 
         const doc = new PDFDocument({ margin: 50 });
+        
+        // 🛡️ SOLUCIÓN AL SEGUNDO ERROR: Manejamos fallos internos del stream del PDF
+        doc.on('error', (err) => {
+            console.error('Error interno en el stream de PDFKit:', err);
+            if (!res.headersSent) {
+                res.status(500).send('Error al generar el archivo PDF.');
+            }
+        });
+
         doc.pipe(res); 
 
         // DISEÑO DEL COMPROBANTE
@@ -211,10 +222,10 @@ export const getPedidoPdf = async (req, res) => {
         doc.fontSize(14).text(`COMPROBANTE DE PEDIDO #${pedido.ped_id}`, { align: 'center' });
         doc.moveDown();
 
-        doc.fontSize(10).text(`Fecha: ${new Date(pedido.ped_fecha).toLocaleString()}`);
-        doc.text(`Estado: ${pedido.ped_estado.toUpperCase()}`);
-        doc.text(`Cliente: ${pedido.cli_nombre}`);
-        doc.text(`Identificación: ${pedido.cli_identificacion}`);
+        doc.fontSize(10).text(`Fecha: ${pedido.ped_fecha ? new Date(pedido.ped_fecha).toLocaleString() : 'No registra'}`);
+        doc.text(`Estado: ${estadoTexto}`); // <-- Usamos la variable segura aquí
+        doc.text(`Cliente: ${pedido.cli_nombre || 'Cliente General'}`);
+        doc.text(`Identificación: ${pedido.cli_identificacion || 'S/N'}`);
         if (pedido.cli_telefono) doc.text(`Teléfono: ${pedido.cli_telefono}`);
         if (pedido.cli_correo) doc.text(`Correo: ${pedido.cli_correo}`);
         doc.moveDown();
@@ -225,12 +236,12 @@ export const getPedidoPdf = async (req, res) => {
 
         let totalGeneral = 0;
         detalle.forEach((item) => {
-            const cantidad = Number(item.det_cantidad);
-            const precio = Number(item.det_precio);
+            const cantidad = Number(item.det_cantidad) || 0;
+            const precio = Number(item.det_precio) || 0;
             const subtotal = cantidad * precio;
             totalGeneral += subtotal;
 
-            doc.fontSize(11).text(`${item.prod_nombre} [Cód: ${item.prod_codigo || 'S/C'}]`);
+            doc.fontSize(11).text(`${item.prod_nombre || 'Producto Desconocido'} [Cód: ${item.prod_codigo || 'S/C'}]`);
             doc.fontSize(10).text(`   Cantidad: ${cantidad}   x   Precio: $${precio.toFixed(2)}   =   Subtotal: $${subtotal.toFixed(2)}`);
             doc.moveDown(0.3);
         });
@@ -243,6 +254,11 @@ export const getPedidoPdf = async (req, res) => {
 
     } catch (error) {
         console.error('Error al generar PDF:', error);
-        return res.status(500).json({ ok: false, mensaje: 'Error interno al generar el PDF' });
+        
+        // 🛡️ Solo intentamos responder si el stream no ha enviado ya cabeceras al cliente
+        if (!res.headersSent) {
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(500).json({ ok: false, mensaje: 'Error interno al generar el PDF' });
+        }
     }
 };
