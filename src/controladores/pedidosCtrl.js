@@ -154,6 +154,7 @@ export const guardarPedido = async (req, res) => {
                     },
                     android: {
                         notification: {
+                            channelId: 'default', // <--- 🌟 ¡AGREGA ESTA LÍNEA AQUÍ! (Indica canal de alta prioridad)
                             sound: 'default',
                             status_icon: 'stock_ticker_update',
                             color: '#7e57c2'
@@ -301,6 +302,7 @@ export const testPushNotification = async (req, res) => {
         },
         android: {
             notification: {
+                channelId: 'default', // <--- 🌟 ¡AGREGA ESTA LÍNEA AQUÍ TAMBIÉN!
                 sound: 'default',
                 status_icon: 'stock_ticker_update',
                 color: '#7e57c2'
