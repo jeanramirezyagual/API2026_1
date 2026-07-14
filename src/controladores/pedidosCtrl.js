@@ -101,7 +101,8 @@ export const guardarPedido = async (req, res) => {
             ped_fecha,
             usr_id,
             ped_estado,
-            detalle
+            detalle,
+            tokenCliente // 🌟 1. Recibimos el token del cliente que hace el pedido desde Ionic
         } = req.body;
 
         if (!detalle || detalle.length === 0) {
@@ -139,39 +140,59 @@ export const guardarPedido = async (req, res) => {
         await conexion.commit();
 
         // ==========================================================
-        // 🚀 ENVIAR NOTIFICACIÓN PUSH REAL AL ADMINISTRADOR
+        // 🚀 ENVIAR NOTIFICACIÓN PUSH REAL AL CLIENTE Y AL ADMIN
         // ==========================================================
         try {
-            const tokenAdmin = process.env.TOKEN_ADMIN_REDMI;
-
-            if (tokenAdmin && messaging) {
-                console.log(`[Push Notification] Disparando alerta de nuevo pedido #${ped_id} para el Administrador.`);
-                
-                const mensajePush = {
-                    notification: {
-                        title: '¡Nueva Venta Registrada! 💰',
-                        body: `El cliente ${cli_nombre || 'General'} ha creado el pedido #${ped_id}.`
-                    },
-                    android: {
+            if (messaging) {
+                // A. ENVIAR AL CLIENTE (El que está comprando) 🌟
+                if (tokenCliente) {
+                    const mensajeCliente = {
                         notification: {
-                            channelId: 'default', // <--- 🌟 ¡AGREGA ESTA LÍNEA AQUÍ! (Indica canal de alta prioridad)
-                            sound: 'default',
-                            status_icon: 'stock_ticker_update',
-                            color: '#7e57c2'
-                        }
-                    },
-                    token: tokenAdmin
-                };
+                            title: '¡Pedido Realizado! 🎉',
+                            body: `Hola ${cli_nombre || 'Cliente'}, tu pedido #${ped_id} se ha procesado con éxito.`
+                        },
+                        android: {
+                            notification: {
+                                channelId: 'default', // Para que use el canal de alta prioridad en el móvil
+                                sound: 'default',
+                                status_icon: 'stock_ticker_update',
+                                color: '#4caf50' // Color verde para éxito
+                            }
+                        },
+                        token: tokenCliente // Se le envía al celular del cliente
+                    };
 
-                // Envío asíncrono en segundo plano
-                messaging.send(mensajePush)
-                    .then((resp) => console.log('✅ Push enviado con éxito tras compra:', resp))
-                    .catch((err) => console.error('❌ Error al despachar Push en compra:', err.message));
-            } else {
-                console.log('[Push Notification] Envío omitido: TOKEN_ADMIN_REDMI no configurado en .env o Firebase no listo.');
+                    messaging.send(mensajeCliente)
+                        .then((resp) => console.log('✅ Push enviado con éxito al cliente:', resp))
+                        .catch((err) => console.error('❌ Error al enviar Push al cliente:', err.message));
+                }
+
+                // B. ENVIAR AL ADMINISTRADOR (A ti para avisarte que hay una venta)
+                const tokenAdmin = process.env.TOKEN_ADMIN_REDMI;
+                if (tokenAdmin) {
+                    const mensajeAdmin = {
+                        notification: {
+                            title: '¡Nueva Venta Registrada! 💰',
+                            body: `El cliente ${cli_nombre || 'General'} ha creado el pedido #${ped_id}.`
+                        },
+                        android: {
+                            notification: {
+                                channelId: 'default', 
+                                sound: 'default',
+                                status_icon: 'stock_ticker_update',
+                                color: '#7e57c2'
+                            }
+                        },
+                        token: tokenAdmin
+                    };
+
+                    messaging.send(mensajeAdmin)
+                        .then((resp) => console.log('✅ Push enviado con éxito al Admin:', resp))
+                        .catch((err) => console.error('❌ Error al enviar Push al Admin:', err.message));
+                }
             }
         } catch (pushErr) {
-            console.error("Error al estructurar la notificación push, pero el pedido se guardó:", pushErr.message);
+            console.error("Error al estructurar las notificaciones push, pero el pedido se guardó:", pushErr.message);
         }
         // ==========================================================
 
